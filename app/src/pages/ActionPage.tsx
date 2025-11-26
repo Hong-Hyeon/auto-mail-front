@@ -24,6 +24,7 @@ export const ActionPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [industryFilter, setIndustryFilter] = useState<string>('all');
   const [regionFilter, setRegionFilter] = useState<string>('all');
+  const [emailSentFilter, setEmailSentFilter] = useState<'all' | 'sent' | 'not_sent'>('all');
   
   // Options
   const [skipSent, setSkipSent] = useState(true);
@@ -33,6 +34,13 @@ export const ActionPage = () => {
   const [isDateRangeModalOpen, setIsDateRangeModalOpen] = useState(false);
   const [emailHistoryByCompany, setEmailHistoryByCompany] = useState<Map<string, EmailHistory[]>>(new Map());
   const [highlightedDates, setHighlightedDates] = useState<Set<string>>(new Set());
+
+  // Reset email sent filter when email history is cleared
+  useEffect(() => {
+    if (emailHistoryByCompany.size === 0 && emailSentFilter !== 'all') {
+      setEmailSentFilter('all');
+    }
+  }, [emailHistoryByCompany]);
 
   // Fetch companies
   const fetchCompanies = async () => {
@@ -92,8 +100,21 @@ export const ActionPage = () => {
       filtered = filtered.filter((company) => company.region === regionFilter);
     }
 
+    // Email sent filter (only apply if email history data is available)
+    if (emailSentFilter !== 'all' && emailHistoryByCompany.size > 0) {
+      filtered = filtered.filter((company) => {
+        const hasEmailHistory = emailHistoryByCompany.has(company.id);
+        if (emailSentFilter === 'sent') {
+          return hasEmailHistory;
+        } else {
+          // not_sent
+          return !hasEmailHistory;
+        }
+      });
+    }
+
     return filtered;
-  }, [companies, industryFilter, regionFilter]);
+  }, [companies, industryFilter, regionFilter, emailSentFilter, emailHistoryByCompany]);
 
   // Get unique industries and regions for filters
   const industries = useMemo(() => {
@@ -302,30 +323,67 @@ export const ActionPage = () => {
             }}>
               Select Companies
             </h2>
-            <button
-              onClick={() => setIsDateRangeModalOpen(true)}
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#2563eb',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#1d4ed8';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#2563eb';
-              }}
-            >
-              📅 Date
-            </button>
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
+              alignItems: 'center',
+            }}>
+              {emailHistoryByCompany.size > 0 && (
+                <button
+                  onClick={() => {
+                    setEmailHistoryByCompany(new Map());
+                    setHighlightedDates(new Set());
+                    setEmailSentFilter('all');
+                  }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-color)';
+                  }}
+                  title="Clear date range and email history"
+                >
+                  🗑️ Clear
+                </button>
+              )}
+              <button
+                onClick={() => setIsDateRangeModalOpen(true)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#2563eb',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1d4ed8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                }}
+              >
+                📅 Date
+              </button>
+            </div>
           </div>
 
           {/* Filters */}
@@ -410,6 +468,36 @@ export const ActionPage = () => {
                   {region}
                 </option>
               ))}
+            </select>
+
+            {/* Email Sent Filter */}
+            <select
+              value={emailSentFilter}
+              onChange={(e) => setEmailSentFilter(e.target.value as 'all' | 'sent' | 'not_sent')}
+              disabled={emailHistoryByCompany.size === 0}
+              style={{
+                padding: '0.625rem 1rem',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                fontSize: '0.875rem',
+                backgroundColor: emailHistoryByCompany.size === 0 ? 'var(--hover-bg)' : 'var(--card-bg)',
+                color: emailHistoryByCompany.size === 0 ? 'var(--text-secondary)' : 'var(--text-color)',
+                cursor: emailHistoryByCompany.size === 0 ? 'not-allowed' : 'pointer',
+                outline: 'none',
+                minWidth: '150px',
+                opacity: emailHistoryByCompany.size === 0 ? 0.6 : 1,
+              }}
+              title={emailHistoryByCompany.size === 0 ? 'Please select a date range first' : ''}
+            >
+              <option value="all">
+                {emailHistoryByCompany.size === 0 ? 'All Companies (Set Date First)' : 'All Companies'}
+              </option>
+              <option value="sent" disabled={emailHistoryByCompany.size === 0}>
+                Email Sent
+              </option>
+              <option value="not_sent" disabled={emailHistoryByCompany.size === 0}>
+                Not Sent
+              </option>
             </select>
           </div>
 
