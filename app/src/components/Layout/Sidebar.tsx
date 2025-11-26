@@ -14,6 +14,7 @@ const menuItems: MenuItem[] = [
   { label: 'Companies', path: '/dashboard/companies' },
   { label: 'Email History', path: '/dashboard/email-history' },
   { label: 'Email Template', path: '/dashboard/email-template' },
+  { label: 'Company Crawling', path: '/dashboard/company-crawling' },
   { label: 'Action', path: '/dashboard/action' },
 ];
 

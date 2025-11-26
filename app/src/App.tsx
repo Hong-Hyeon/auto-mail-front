@@ -8,6 +8,7 @@ import { UsersPage } from './pages/UsersPage';
 import { CompaniesPage } from './pages/CompaniesPage';
 import { EmailHistoryPage } from './pages/EmailHistoryPage';
 import { EmailTemplatePage } from './pages/EmailTemplatePage';
+import { CompanyCrawlingPage } from './pages/CompanyCrawlingPage';
 import { ActionPage } from './pages/ActionPage';
 import './App.css';
 
@@ -55,6 +56,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EmailTemplatePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/company-crawling"
+              element={
+                <ProtectedRoute>
+                  <CompanyCrawlingPage />
                 </ProtectedRoute>
               }
             />
