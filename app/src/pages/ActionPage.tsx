@@ -4,10 +4,13 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Layout } from '../components/Layout/Layout';
+import { DateRangeModal } from '../components/DateRangeModal/DateRangeModal';
 import { companyService } from '../services/companyService';
 import { mailService } from '../services/mailService';
+import { emailHistoryService } from '../services/emailHistoryService';
 import type { Company } from '../types/company';
 import type { MailSendResponse } from '../types/mail';
+import type { EmailHistory } from '../types/emailHistory';
 
 export const ActionPage = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -25,6 +28,11 @@ export const ActionPage = () => {
   // Options
   const [skipSent, setSkipSent] = useState(true);
   const [limit, setLimit] = useState(1000);
+
+  // Date Range Modal
+  const [isDateRangeModalOpen, setIsDateRangeModalOpen] = useState(false);
+  const [emailHistoryByCompany, setEmailHistoryByCompany] = useState<Map<string, EmailHistory[]>>(new Map());
+  const [highlightedDates, setHighlightedDates] = useState<Set<string>>(new Set());
 
   // Fetch companies
   const fetchCompanies = async () => {
@@ -280,14 +288,45 @@ export const ActionPage = () => {
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
           marginBottom: '2rem',
         }}>
-          <h2 style={{
-            color: 'var(--text-color)',
-            fontSize: '1.25rem',
-            fontWeight: '600',
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             marginBottom: '1.5rem',
           }}>
-            Select Companies
-          </h2>
+            <h2 style={{
+              color: 'var(--text-color)',
+              fontSize: '1.25rem',
+              fontWeight: '600',
+              margin: 0,
+            }}>
+              Select Companies
+            </h2>
+            <button
+              onClick={() => setIsDateRangeModalOpen(true)}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#2563eb',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#1d4ed8';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#2563eb';
+              }}
+            >
+              📅 Date
+            </button>
+          </div>
 
           {/* Filters */}
           <div style={{
@@ -492,6 +531,33 @@ export const ActionPage = () => {
                         {company.contact_email || company.email}
                       </div>
                     </div>
+                    {emailHistoryByCompany.has(company.id) && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                      }}>
+                        <span style={{
+                          padding: '0.5rem 0.875rem',
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          borderRadius: '20px',
+                          fontSize: '0.8125rem',
+                          fontWeight: '700',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)',
+                          border: '2px solid #059669',
+                          whiteSpace: 'nowrap',
+                          letterSpacing: '0.025em',
+                          animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        }}>
+                          <span style={{ fontSize: '1rem', lineHeight: '1' }}>✓</span>
+                          <span>Sent {emailHistoryByCompany.get(company.id)?.length || 0}</span>
+                        </span>
+                      </div>
+                    )}
                     {company.industry && (
                       <div style={{
                         padding: '0.25rem 0.625rem',
@@ -795,6 +861,65 @@ export const ActionPage = () => {
             </button>
           </div>
         )}
+
+        {/* Date Range Modal */}
+        <DateRangeModal
+          isOpen={isDateRangeModalOpen}
+          onClose={() => setIsDateRangeModalOpen(false)}
+          onApply={async (startDate, endDate) => {
+            if (!startDate || !endDate) return;
+            
+            try {
+              // Format dates for API
+              const startDateStr = startDate.toISOString();
+              const endDateStr = new Date(endDate);
+              endDateStr.setHours(23, 59, 59, 999);
+              const endDateStrFormatted = endDateStr.toISOString();
+
+              // Get list of company IDs to filter (selected companies or all filtered companies)
+              const companyIdsToCheck = selectedCompanyIds.size > 0
+                ? Array.from(selectedCompanyIds)
+                : filteredCompanies.map(c => c.id);
+
+              // Create a Set for fast lookup
+              const companyIdsSet = new Set(companyIdsToCheck);
+
+              // Single API call: Fetch all email history in date range (without company_id filter)
+              // Use limit: 1000 (maximum allowed by backend)
+              const response = await emailHistoryService.getEmailHistory({
+                start_date: startDateStr,
+                end_date: endDateStrFormatted,
+                limit: 1000, // Maximum allowed by backend
+              });
+
+              // Group email history by company_id on client side
+              const historyMap = new Map<string, EmailHistory[]>();
+              const datesSet = new Set<string>();
+
+              response.items.forEach((item) => {
+                // Only process emails for companies we're interested in
+                if (item.company_id && companyIdsSet.has(item.company_id)) {
+                  // Add to company history map
+                  if (!historyMap.has(item.company_id)) {
+                    historyMap.set(item.company_id, []);
+                  }
+                  historyMap.get(item.company_id)!.push(item);
+
+                  // Add date to highlighted set
+                  const sentDate = new Date(item.sent_at);
+                  const dateKey = `${sentDate.getFullYear()}-${String(sentDate.getMonth() + 1).padStart(2, '0')}-${String(sentDate.getDate()).padStart(2, '0')}`;
+                  datesSet.add(dateKey);
+                }
+              });
+
+              setEmailHistoryByCompany(historyMap);
+              setHighlightedDates(datesSet);
+            } catch (err: any) {
+              alert(err.response?.data?.detail || err.message || 'Failed to fetch email history');
+            }
+          }}
+          highlightedDates={highlightedDates}
+        />
       </div>
     </Layout>
   );
