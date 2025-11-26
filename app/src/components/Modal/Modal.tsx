@@ -1,7 +1,8 @@
 /**
- * Reusable Modal Component
+ * Reusable Modal Component with Animations
  */
 
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
 interface ModalProps {
@@ -13,7 +14,23 @@ interface ModalProps {
 }
 
 export const Modal = ({ isOpen, onClose, title, children, size = 'medium' }: ModalProps) => {
-  if (!isOpen) return null;
+  const [isVisible, setIsVisible] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      // Trigger animation after render
+      setTimeout(() => setIsVisible(true), 10);
+    } else {
+      setIsVisible(false);
+      // Wait for animation to complete before unmounting
+      const timer = setTimeout(() => setShouldRender(false), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  if (!shouldRender) return null;
 
   const sizeStyles = {
     small: { width: '400px' },
@@ -34,6 +51,8 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'medium' }: Mod
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1000,
+        opacity: isVisible ? 1 : 0,
+        transition: 'opacity 0.2s ease-in-out',
       }}
       onClick={onClose}
     >
@@ -46,6 +65,9 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'medium' }: Mod
           maxWidth: sizeStyles[size].width,
           maxHeight: '90vh',
           overflow: 'auto',
+          transform: isVisible ? 'scale(1)' : 'scale(0.95)',
+          opacity: isVisible ? 1 : 0,
+          transition: 'transform 0.2s ease-out, opacity 0.2s ease-out',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -80,6 +102,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'medium' }: Mod
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: '4px',
+              transition: 'background-color 0.2s ease',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
@@ -102,4 +125,3 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'medium' }: Mod
     </div>
   );
 };
-
