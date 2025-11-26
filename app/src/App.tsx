@@ -7,6 +7,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
 import { CompaniesPage } from './pages/CompaniesPage';
 import { EmailHistoryPage } from './pages/EmailHistoryPage';
+import { EmailTemplatePage } from './pages/EmailTemplatePage';
 import { ActionPage } from './pages/ActionPage';
 import './App.css';
 
@@ -46,6 +47,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EmailHistoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/email-template"
+              element={
+                <ProtectedRoute>
+                  <EmailTemplatePage />
                 </ProtectedRoute>
               }
             />
