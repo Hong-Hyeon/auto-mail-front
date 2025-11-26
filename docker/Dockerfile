@@ -9,6 +9,9 @@ WORKDIR /app
 # package.json과 package-lock.json 복사
 COPY app/package*.json ./
 
+# .npmrc 파일 복사 (legacy-peer-deps 설정)
+COPY app/.npmrc ./
+
 # 의존성 설치
 RUN npm ci
 

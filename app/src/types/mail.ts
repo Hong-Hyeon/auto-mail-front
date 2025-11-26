@@ -20,6 +20,8 @@ export interface MailSendResponse {
 
 export interface MailSendRequest {
   company_ids?: string[] | null;
+  template_id?: string | null;
+  template_name?: string | null;
   industry?: string | null;
   region?: string | null;
   skip_sent: boolean;

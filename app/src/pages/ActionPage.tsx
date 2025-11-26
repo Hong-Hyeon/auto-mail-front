@@ -8,9 +8,11 @@ import { DateRangeModal } from '../components/DateRangeModal/DateRangeModal';
 import { companyService } from '../services/companyService';
 import { mailService } from '../services/mailService';
 import { emailHistoryService } from '../services/emailHistoryService';
+import { emailTemplateService } from '../services/emailTemplateService';
 import type { Company } from '../types/company';
 import type { MailSendResponse } from '../types/mail';
 import type { EmailHistory } from '../types/emailHistory';
+import type { EmailTemplate } from '../types/emailTemplate';
 
 export const ActionPage = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -29,6 +31,11 @@ export const ActionPage = () => {
   // Options
   const [skipSent, setSkipSent] = useState(true);
   const [limit, setLimit] = useState(1000);
+  
+  // Templates
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
 
   // Date Range Modal
   const [isDateRangeModalOpen, setIsDateRangeModalOpen] = useState(false);
@@ -75,8 +82,31 @@ export const ActionPage = () => {
     }
   };
 
+  // Fetch templates
+  const fetchTemplates = async () => {
+    try {
+      setLoadingTemplates(true);
+      const response = await emailTemplateService.getTemplates({
+        is_active: true,
+        limit: 1000,
+      });
+      setTemplates(response.items);
+      
+      // Set default template if available
+      if (response.items.length > 0 && !selectedTemplateId) {
+        const defaultTemplate = response.items.find(t => t.name === 'factoring_service') || response.items[0];
+        setSelectedTemplateId(defaultTemplate.id);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch templates:', err);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
+
   useEffect(() => {
     fetchCompanies();
+    fetchTemplates();
   }, []);
 
   // Debounced search
@@ -182,6 +212,8 @@ export const ActionPage = () => {
       const request = {
         company_ids: null,
         // "Send to all" means all active companies, regardless of filters
+        template_id: selectedTemplateId || null,
+        template_name: null,
         industry: null,
         region: null,
         skip_sent: skipSent,
@@ -219,6 +251,8 @@ export const ActionPage = () => {
 
       const request = {
         company_ids: Array.from(selectedCompanyIds),
+        template_id: selectedTemplateId || null,
+        template_name: null,
         industry: null, // When specific companies are selected, don't use industry filter
         region: null, // When specific companies are selected, don't use region filter
         skip_sent: skipSent,
@@ -261,44 +295,95 @@ export const ActionPage = () => {
           borderRadius: '8px',
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
           marginBottom: '2rem',
-          textAlign: 'center',
         }}>
-          <p style={{
-            color: 'var(--text-secondary)',
-            fontSize: '0.875rem',
-            marginBottom: '1.5rem',
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.5rem',
+            alignItems: 'center',
           }}>
-            Send email to all active companies in the database
-          </p>
-          <button
-            onClick={handleSendToAll}
-            disabled={sending}
-            style={{
-              padding: '1rem 2rem',
-              backgroundColor: sending ? '#9ca3af' : '#2563eb',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: sending ? 'not-allowed' : 'pointer',
-              fontSize: '1rem',
-              fontWeight: '600',
-              display: 'inline-flex',
-              alignItems: 'center',
+            <p style={{
+              color: 'var(--text-secondary)',
+              fontSize: '0.875rem',
+              margin: 0,
+            }}>
+              Send email to all active companies in the database
+            </p>
+            
+            {/* Template Selection */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
               gap: '0.5rem',
-            }}
-            onMouseEnter={(e) => {
-              if (!sending) {
-                e.currentTarget.style.backgroundColor = '#1d4ed8';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!sending) {
-                e.currentTarget.style.backgroundColor = '#2563eb';
-              }
-            }}
-          >
-            {sending ? '⏳ Sending...' : '📧 Send Email to All Active Companies'}
-          </button>
+              width: '100%',
+              maxWidth: '400px',
+            }}>
+              <label style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: 'var(--text-color)',
+                textAlign: 'left',
+              }}>
+                Email Template
+              </label>
+              <select
+                value={selectedTemplateId}
+                onChange={(e) => setSelectedTemplateId(e.target.value)}
+                disabled={loadingTemplates || sending}
+                style={{
+                  padding: '0.625rem 1rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  backgroundColor: (loadingTemplates || sending) ? 'var(--hover-bg)' : 'var(--card-bg)',
+                  color: 'var(--text-color)',
+                  cursor: (loadingTemplates || sending) ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {loadingTemplates ? (
+                  <option>Loading templates...</option>
+                ) : templates.length === 0 ? (
+                  <option>No templates available</option>
+                ) : (
+                  templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name} {template.description ? `- ${template.description}` : ''}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+            
+            <button
+              onClick={handleSendToAll}
+              disabled={sending || !selectedTemplateId || loadingTemplates}
+              style={{
+                padding: '1rem 2rem',
+                backgroundColor: (sending || !selectedTemplateId || loadingTemplates) ? '#9ca3af' : '#2563eb',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: (sending || !selectedTemplateId || loadingTemplates) ? 'not-allowed' : 'pointer',
+                fontSize: '1rem',
+                fontWeight: '600',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+              onMouseEnter={(e) => {
+                if (!sending && selectedTemplateId && !loadingTemplates) {
+                  e.currentTarget.style.backgroundColor = '#1d4ed8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!sending && selectedTemplateId && !loadingTemplates) {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                }
+              }}
+            >
+              {sending ? '⏳ Sending...' : '📧 Send Email to All Active Companies'}
+            </button>
+          </div>
         </div>
 
         {/* Select Companies Section */}
@@ -688,25 +773,74 @@ export const ActionPage = () => {
             }}>
               Selected: <strong style={{ color: 'var(--text-color)' }}>{selectedCompanyIds.size}</strong> company(ies)
             </div>
-            <button
-              onClick={handleSendToSelected}
-              disabled={selectedCompanyIds.size === 0 || sending}
-              style={{
-                padding: '0.625rem 1.25rem',
-                backgroundColor: (selectedCompanyIds.size === 0 || sending) ? '#9ca3af' : '#2563eb',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: (selectedCompanyIds.size === 0 || sending) ? 'not-allowed' : 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: '600',
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              alignItems: 'center',
+              flex: 1,
+              justifyContent: 'flex-end',
+            }}>
+              {/* Template Selection */}
+              <div style={{
                 display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-              }}
-            >
-              {sending ? '⏳ Sending...' : '📧 Send to Selected Companies'}
-            </button>
+                flexDirection: 'column',
+                gap: '0.25rem',
+                minWidth: '250px',
+              }}>
+                <label style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '500',
+                  color: 'var(--text-secondary)',
+                }}>
+                  Template
+                </label>
+                <select
+                  value={selectedTemplateId}
+                  onChange={(e) => setSelectedTemplateId(e.target.value)}
+                  disabled={loadingTemplates || sending}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    fontSize: '0.875rem',
+                    backgroundColor: (loadingTemplates || sending) ? 'var(--hover-bg)' : 'var(--card-bg)',
+                    color: 'var(--text-color)',
+                    cursor: (loadingTemplates || sending) ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {loadingTemplates ? (
+                    <option>Loading...</option>
+                  ) : templates.length === 0 ? (
+                    <option>No templates</option>
+                  ) : (
+                    templates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+              <button
+                onClick={handleSendToSelected}
+                disabled={selectedCompanyIds.size === 0 || sending || !selectedTemplateId || loadingTemplates}
+                style={{
+                  padding: '0.625rem 1.25rem',
+                  backgroundColor: (selectedCompanyIds.size === 0 || sending || !selectedTemplateId || loadingTemplates) ? '#9ca3af' : '#2563eb',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: (selectedCompanyIds.size === 0 || sending || !selectedTemplateId || loadingTemplates) ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                {sending ? '⏳ Sending...' : '📧 Send to Selected Companies'}
+              </button>
+            </div>
           </div>
         </div>
 

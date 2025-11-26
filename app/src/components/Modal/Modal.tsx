@@ -18,7 +18,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'medium' }: Mod
   const sizeStyles = {
     small: { width: '400px' },
     medium: { width: '500px' },
-    large: { width: '700px' },
+    large: { width: '1200px' },
   };
 
   return (
