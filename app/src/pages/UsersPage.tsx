@@ -4,8 +4,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Layout } from '../components/Layout/Layout';
+import { Modal } from '../components/Modal/Modal';
+import { AddUserForm } from '../components/UserForm/AddUserForm';
+import { EditUserForm } from '../components/UserForm/EditUserForm';
 import { userService } from '../services/userService';
-import type { User } from '../types/user';
+import type { User, UserCreate, UserUpdate } from '../types/user';
 
 type RoleFilter = 'all' | 'admin' | 'user';
 type StatusFilter = 'all' | 'active' | 'inactive';
@@ -30,6 +33,13 @@ export const UsersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalUsers, setTotalUsers] = useState(0);
+
+  // Modal state
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isUpdatingUser, setIsUpdatingUser] = useState(false);
 
   // Fetch users
   const fetchUsers = async () => {
@@ -123,17 +133,62 @@ export const UsersPage = () => {
     }
   };
 
-  const handleDelete = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) {
+  const handleInactive = async (user: User) => {
+    if (!confirm(`Are you sure you want to deactivate ${user.email}? Inactive users cannot log in.`)) {
       return;
     }
 
     try {
-      await userService.deleteUser(userId);
+      await userService.updateUser(user.id, {
+        is_active: false,
+      });
       await fetchUsers();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to delete user');
+      alert(err.response?.data?.detail || 'Failed to deactivate user');
     }
+  };
+
+  const handleToggleActive = async (user: User) => {
+    try {
+      await userService.updateUser(user.id, {
+        is_active: !user.is_active,
+      });
+      await fetchUsers();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to update user status');
+    }
+  };
+
+  const handleAddUser = async (userData: UserCreate) => {
+    setIsCreatingUser(true);
+    try {
+      await userService.createUser(userData);
+      setIsAddUserModalOpen(false);
+      await fetchUsers();
+    } catch (err: any) {
+      throw err; // Let the form handle the error
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
+  const handleEditUser = async (userId: string, userData: UserUpdate) => {
+    setIsUpdatingUser(true);
+    try {
+      await userService.updateUser(userId, userData);
+      setIsEditUserModalOpen(false);
+      setEditingUser(null);
+      await fetchUsers();
+    } catch (err: any) {
+      throw err; // Let the form handle the error
+    } finally {
+      setIsUpdatingUser(false);
+    }
+  };
+
+  const openEditModal = (user: User) => {
+    setEditingUser(user);
+    setIsEditUserModalOpen(true);
   };
 
   const totalPages = Math.ceil(totalUsers / pageSize);
@@ -171,10 +226,7 @@ export const UsersPage = () => {
             Users
           </h1>
           <button
-            onClick={() => {
-              // TODO: Add user modal
-              alert('Add user functionality will be implemented');
-            }}
+            onClick={() => setIsAddUserModalOpen(true)}
             style={{
               padding: '0.625rem 1.25rem',
               backgroundColor: '#2563eb',
@@ -477,17 +529,27 @@ export const UsersPage = () => {
                           padding: '0.875rem 1rem',
                           fontSize: '0.875rem',
                         }}>
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '0.25rem 0.625rem',
-                            borderRadius: '12px',
-                            fontSize: '0.75rem',
-                            fontWeight: '500',
-                            backgroundColor: user.is_active ? '#d1fae5' : '#f3f4f6',
-                            color: user.is_active ? '#065f46' : '#6b7280',
-                          }}>
+                          <button
+                            onClick={() => handleToggleActive(user)}
+                            style={{
+                              padding: '0.375rem 0.75rem',
+                              backgroundColor: user.is_active ? '#d1fae5' : '#fee2e2',
+                              color: user.is_active ? '#065f46' : '#991b1b',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '0.75rem',
+                              fontWeight: '500',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.opacity = '0.8';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.opacity = '1';
+                            }}
+                          >
                             {user.is_active ? 'Active' : 'Inactive'}
-                          </span>
+                          </button>
                         </td>
                         <td style={{
                           padding: '0.875rem 1rem',
@@ -505,10 +567,7 @@ export const UsersPage = () => {
                             gap: '0.5rem',
                           }}>
                             <button
-                              onClick={() => {
-                                // TODO: Edit user modal
-                                alert('Edit user functionality will be implemented');
-                              }}
+                              onClick={() => openEditModal(user)}
                               style={{
                                 padding: '0.375rem 0.75rem',
                                 backgroundColor: '#2563eb',
@@ -523,19 +582,21 @@ export const UsersPage = () => {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDelete(user.id)}
+                              onClick={() => handleInactive(user)}
+                              disabled={!user.is_active}
                               style={{
                                 padding: '0.375rem 0.75rem',
-                                backgroundColor: '#dc2626',
+                                backgroundColor: user.is_active ? '#dc2626' : '#9ca3af',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '4px',
-                                cursor: 'pointer',
+                                cursor: user.is_active ? 'pointer' : 'not-allowed',
                                 fontSize: '0.75rem',
                                 fontWeight: '500',
+                                opacity: user.is_active ? 1 : 0.6,
                               }}
                             >
-                              Delete
+                              Inactive
                             </button>
                           </div>
                         </td>
@@ -632,6 +693,41 @@ export const UsersPage = () => {
           )}
         </div>
       </div>
+
+      {/* Add User Modal */}
+      <Modal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+        title="Add New User"
+      >
+        <AddUserForm
+          onSubmit={handleAddUser}
+          onCancel={() => setIsAddUserModalOpen(false)}
+          loading={isCreatingUser}
+        />
+      </Modal>
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <Modal
+          isOpen={isEditUserModalOpen}
+          onClose={() => {
+            setIsEditUserModalOpen(false);
+            setEditingUser(null);
+          }}
+          title="Edit User"
+        >
+          <EditUserForm
+            user={editingUser}
+            onSubmit={handleEditUser}
+            onCancel={() => {
+              setIsEditUserModalOpen(false);
+              setEditingUser(null);
+            }}
+            loading={isUpdatingUser}
+          />
+        </Modal>
+      )}
     </Layout>
   );
 };
