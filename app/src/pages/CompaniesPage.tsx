@@ -4,8 +4,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Layout } from '../components/Layout/Layout';
+import { Modal } from '../components/Modal/Modal';
+import { AddCompanyForm } from '../components/CompanyForm/AddCompanyForm';
+import { EditCompanyForm } from '../components/CompanyForm/EditCompanyForm';
 import { companyService } from '../services/companyService';
-import type { Company } from '../types/company';
+import type { Company, CompanyCreate, CompanyUpdate } from '../types/company';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
 type SortField = 'name' | 'email' | 'created_at';
@@ -28,6 +31,13 @@ export const CompaniesPage = () => {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
+
+  // Modal state
+  const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false);
+  const [isCreatingCompany, setIsCreatingCompany] = useState(false);
+  const [isEditCompanyModalOpen, setIsEditCompanyModalOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [isUpdatingCompany, setIsUpdatingCompany] = useState(false);
 
   // Fetch companies
   const fetchCompanies = async () => {
@@ -137,6 +147,49 @@ export const CompaniesPage = () => {
     }
   };
 
+  const handleToggleActive = async (company: Company) => {
+    try {
+      await companyService.updateCompany(company.id, {
+        is_active: !company.is_active,
+      });
+      await fetchCompanies();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to toggle company status');
+    }
+  };
+
+  const handleAddCompany = async (companyData: CompanyCreate) => {
+    setIsCreatingCompany(true);
+    try {
+      await companyService.createCompany(companyData);
+      setIsAddCompanyModalOpen(false);
+      await fetchCompanies();
+    } catch (err: any) {
+      throw err; // Let the form handle the error
+    } finally {
+      setIsCreatingCompany(false);
+    }
+  };
+
+  const handleEditCompany = async (companyId: string, companyData: CompanyUpdate) => {
+    setIsUpdatingCompany(true);
+    try {
+      await companyService.updateCompany(companyId, companyData);
+      setIsEditCompanyModalOpen(false);
+      setEditingCompany(null);
+      await fetchCompanies();
+    } catch (err: any) {
+      throw err; // Let the form handle the error
+    } finally {
+      setIsUpdatingCompany(false);
+    }
+  };
+
+  const openEditModal = (company: Company) => {
+    setEditingCompany(company);
+    setIsEditCompanyModalOpen(true);
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -215,10 +268,7 @@ export const CompaniesPage = () => {
               />
             </label>
             <button
-              onClick={() => {
-                // TODO: Add company modal
-                alert('Add company functionality will be implemented');
-              }}
+              onClick={() => setIsAddCompanyModalOpen(true)}
               style={{
                 padding: '0.625rem 1.25rem',
                 backgroundColor: '#2563eb',
@@ -512,17 +562,29 @@ export const CompaniesPage = () => {
                           padding: '0.875rem 1rem',
                           fontSize: '0.875rem',
                         }}>
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '0.25rem 0.625rem',
-                            borderRadius: '12px',
-                            fontSize: '0.75rem',
-                            fontWeight: '500',
-                            backgroundColor: company.is_active ? '#d1fae5' : '#f3f4f6',
-                            color: company.is_active ? '#065f46' : '#6b7280',
-                          }}>
+                          <button
+                            onClick={() => handleToggleActive(company)}
+                            style={{
+                              display: 'inline-block',
+                              padding: '0.25rem 0.625rem',
+                              borderRadius: '12px',
+                              fontSize: '0.75rem',
+                              fontWeight: '500',
+                              border: 'none',
+                              cursor: 'pointer',
+                              backgroundColor: company.is_active ? '#d1fae5' : '#fee2e2',
+                              color: company.is_active ? '#065f46' : '#991b1b',
+                              transition: 'background-color 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = company.is_active ? '#a7f3d0' : '#fca5a5';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = company.is_active ? '#d1fae5' : '#fee2e2';
+                            }}
+                          >
                             {company.is_active ? 'Active' : 'Inactive'}
-                          </span>
+                          </button>
                         </td>
                         <td style={{
                           padding: '0.875rem 1rem',
@@ -540,10 +602,7 @@ export const CompaniesPage = () => {
                             gap: '0.5rem',
                           }}>
                             <button
-                              onClick={() => {
-                                // TODO: Edit company modal
-                                alert('Edit company functionality will be implemented');
-                              }}
+                              onClick={() => openEditModal(company)}
                               style={{
                                 padding: '0.375rem 0.75rem',
                                 backgroundColor: '#2563eb',
@@ -667,6 +726,43 @@ export const CompaniesPage = () => {
           )}
         </div>
       </div>
+
+      {/* Add Company Modal */}
+      <Modal
+        isOpen={isAddCompanyModalOpen}
+        onClose={() => setIsAddCompanyModalOpen(false)}
+        title="Add New Company"
+        size="large"
+      >
+        <AddCompanyForm
+          onSubmit={handleAddCompany}
+          onCancel={() => setIsAddCompanyModalOpen(false)}
+          loading={isCreatingCompany}
+        />
+      </Modal>
+
+      {/* Edit Company Modal */}
+      {editingCompany && (
+        <Modal
+          isOpen={isEditCompanyModalOpen}
+          onClose={() => {
+            setIsEditCompanyModalOpen(false);
+            setEditingCompany(null);
+          }}
+          title="Edit Company"
+          size="large"
+        >
+          <EditCompanyForm
+            company={editingCompany}
+            onSubmit={handleEditCompany}
+            onCancel={() => {
+              setIsEditCompanyModalOpen(false);
+              setEditingCompany(null);
+            }}
+            loading={isUpdatingCompany}
+          />
+        </Modal>
+      )}
     </Layout>
   );
 };
