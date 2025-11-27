@@ -10,6 +10,7 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
+  { label: 'Dashboard', path: '/dashboard' },
   { label: 'Users', path: '/dashboard/users' },
   { label: 'Companies', path: '/dashboard/companies' },
   { label: 'Email History', path: '/dashboard/email-history' },
