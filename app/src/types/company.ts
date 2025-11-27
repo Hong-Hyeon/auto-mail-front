@@ -2,6 +2,13 @@
  * Company-related TypeScript types
  */
 
+export interface UserInfo {
+  id: string;
+  username: string;
+  email: string;
+  full_name: string | null;
+}
+
 export interface Company {
   id: string;
   name: string;
@@ -13,6 +20,7 @@ export interface Company {
   region: string | null;
   description: string | null;
   created_by: string | null;
+  creator: UserInfo | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

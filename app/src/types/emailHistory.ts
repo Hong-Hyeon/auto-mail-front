@@ -2,10 +2,18 @@
  * Email History-related TypeScript types
  */
 
+export interface UserInfo {
+  id: string;
+  username: string;
+  email: string;
+  full_name: string | null;
+}
+
 export interface EmailHistory {
   id: string;
   company_id: string | null;
   user_id: string | null;
+  user: UserInfo | null;
   recipient_email: string;
   recipient_name: string | null;
   sender_email: string;

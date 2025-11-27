@@ -476,6 +476,17 @@ export const CompaniesPage = () => {
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                       }}>
+                        Created By
+                      </th>
+                      <th style={{
+                        padding: '0.875rem 1rem',
+                        textAlign: 'left',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        color: 'var(--text-secondary)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                      }}>
                         Status
                       </th>
                       <th
@@ -557,6 +568,13 @@ export const CompaniesPage = () => {
                           color: 'var(--text-secondary)',
                         }}>
                           {company.region || '-'}
+                        </td>
+                        <td style={{
+                          padding: '0.875rem 1rem',
+                          fontSize: '0.875rem',
+                          color: 'var(--text-secondary)',
+                        }}>
+                          {company.creator?.email || '-'}
                         </td>
                         <td style={{
                           padding: '0.875rem 1rem',
