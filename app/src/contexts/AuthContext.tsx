@@ -15,6 +15,7 @@ interface AuthContextType extends AuthState {
   updateUser: (userData: UserUpdate) => Promise<void>;
   refreshUser: () => Promise<void>;
   loading: boolean;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -98,6 +99,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     token,
     isAuthenticated: !!token && !!user,
+    isAdmin: !!user?.is_admin,
     login,
     register,
     logout,

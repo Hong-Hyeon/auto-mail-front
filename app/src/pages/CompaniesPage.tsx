@@ -5,9 +5,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Layout } from '../components/Layout/Layout';
 import { Modal } from '../components/Modal/Modal';
+import { AdminOnly } from '../components/AdminOnly';
 import { AddCompanyForm } from '../components/CompanyForm/AddCompanyForm';
 import { EditCompanyForm } from '../components/CompanyForm/EditCompanyForm';
 import { companyService } from '../services/companyService';
+import { useAuth } from '../contexts/AuthContext';
 import type { Company, CompanyCreate, CompanyUpdate } from '../types/company';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
@@ -15,6 +17,7 @@ type SortField = 'name' | 'email' | 'created_at';
 type SortOrder = 'asc' | 'desc';
 
 export const CompaniesPage = () => {
+  const { user, isAdmin } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -244,29 +247,31 @@ export const CompaniesPage = () => {
             display: 'flex',
             gap: '0.75rem',
           }}>
-            <label
-              style={{
-                padding: '0.625rem 1.25rem',
-                backgroundColor: '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-              }}
-            >
-              📄 Upload Excel
-              <input
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-              />
-            </label>
+            <AdminOnly>
+              <label
+                style={{
+                  padding: '0.625rem 1.25rem',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                📄 Upload Excel
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </AdminOnly>
             <button
               onClick={() => setIsAddCompanyModalOpen(true)}
               style={{
@@ -621,34 +626,39 @@ export const CompaniesPage = () => {
                           }}>
                             <button
                               onClick={() => openEditModal(company)}
+                              disabled={!isAdmin && company.created_by !== user?.id}
                               style={{
                                 padding: '0.375rem 0.75rem',
-                                backgroundColor: '#2563eb',
+                                backgroundColor: (!isAdmin && company.created_by !== user?.id) ? '#9ca3af' : '#2563eb',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '4px',
-                                cursor: 'pointer',
+                                cursor: (!isAdmin && company.created_by !== user?.id) ? 'not-allowed' : 'pointer',
                                 fontSize: '0.75rem',
                                 fontWeight: '500',
+                                opacity: (!isAdmin && company.created_by !== user?.id) ? 0.6 : 1,
                               }}
+                              title={(!isAdmin && company.created_by !== user?.id) ? 'You can only edit companies you created' : ''}
                             >
                               Edit
                             </button>
-                            <button
-                              onClick={() => handleDelete(company.id)}
-                              style={{
-                                padding: '0.375rem 0.75rem',
-                                backgroundColor: '#dc2626',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '0.75rem',
-                                fontWeight: '500',
-                              }}
-                            >
-                              Delete
-                            </button>
+                            <AdminOnly>
+                              <button
+                                onClick={() => handleDelete(company.id)}
+                                style={{
+                                  padding: '0.375rem 0.75rem',
+                                  backgroundColor: '#dc2626',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '500',
+                                }}
+                              >
+                                Delete
+                              </button>
+                            </AdminOnly>
                           </div>
                         </td>
                       </tr>

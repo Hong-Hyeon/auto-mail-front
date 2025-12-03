@@ -27,6 +27,7 @@ export interface UserUpdate {
   full_name?: string | null;
   password?: string;
   is_active?: boolean;
+  is_admin?: boolean;
 }
 
 export interface UserLogin {

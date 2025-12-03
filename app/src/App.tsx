@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
@@ -30,9 +31,9 @@ function App() {
             <Route
               path="/dashboard/users"
               element={
-                <ProtectedRoute>
+                <AdminRoute>
                   <UsersPage />
-                </ProtectedRoute>
+                </AdminRoute>
               }
             />
             <Route

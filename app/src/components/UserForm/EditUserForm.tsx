@@ -18,6 +18,8 @@ export const EditUserForm = ({ user, onSubmit, onCancel, loading = false }: Edit
     username: user.username,
     full_name: user.full_name || '',
     password: '',
+    is_admin: user.is_admin,
+    is_active: user.is_active,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -29,6 +31,8 @@ export const EditUserForm = ({ user, onSubmit, onCancel, loading = false }: Edit
       username: user.username,
       full_name: user.full_name || '',
       password: '',
+      is_admin: user.is_admin,
+      is_active: user.is_active,
     });
     setErrors({});
     setSubmitError(null);
@@ -72,6 +76,8 @@ export const EditUserForm = ({ user, onSubmit, onCancel, loading = false }: Edit
         email: formData.email,
         username: formData.username,
         full_name: formData.full_name?.trim() || null,
+        is_admin: formData.is_admin,
+        is_active: formData.is_active,
       };
 
       // Only include password if it's provided
@@ -85,13 +91,13 @@ export const EditUserForm = ({ user, onSubmit, onCancel, loading = false }: Edit
     }
   };
 
-  const handleChange = (field: keyof UserUpdate, value: string) => {
+  const handleChange = (field: keyof UserUpdate, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
-    if (errors[field]) {
+    if (errors[field as string]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
-        delete newErrors[field];
+        delete newErrors[field as string];
         return newErrors;
       });
     }
@@ -281,6 +287,76 @@ export const EditUserForm = ({ user, onSubmit, onCancel, loading = false }: Edit
           color: 'var(--text-secondary)',
         }}>
           Leave blank to keep current password (min 8 characters if changing)
+        </div>
+      </div>
+
+      {/* Admin Status */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            cursor: 'pointer',
+            color: 'var(--text-color)',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={formData.is_admin || false}
+            onChange={(e) => handleChange('is_admin', e.target.checked)}
+            disabled={loading}
+            style={{
+              width: '18px',
+              height: '18px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          />
+          <span>Admin User</span>
+        </label>
+        <div style={{
+          marginTop: '0.25rem',
+          fontSize: '0.75rem',
+          color: 'var(--text-secondary)',
+        }}>
+          Grant admin privileges to this user
+        </div>
+      </div>
+
+      {/* Active Status */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            cursor: 'pointer',
+            color: 'var(--text-color)',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={formData.is_active || false}
+            onChange={(e) => handleChange('is_active', e.target.checked)}
+            disabled={loading}
+            style={{
+              width: '18px',
+              height: '18px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          />
+          <span>Active User</span>
+        </label>
+        <div style={{
+          marginTop: '0.25rem',
+          fontSize: '0.75rem',
+          color: 'var(--text-secondary)',
+        }}>
+          Inactive users cannot log in
         </div>
       </div>
 

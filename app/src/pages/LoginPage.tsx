@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import type { UserLogin } from '../types/user';
 
@@ -16,12 +16,10 @@ export const LoginPage = () => {
   
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
-    navigate(from, { replace: true });
+    navigate('/dashboard', { replace: true });
     return null;
   }
 
@@ -34,7 +32,7 @@ export const LoginPage = () => {
       const credentials: UserLogin = { email, password };
       await login(credentials);
       
-      // Redirect to dashboard after successful login
+      // Always redirect to dashboard after successful login
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(
