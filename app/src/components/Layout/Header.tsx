@@ -58,6 +58,32 @@ export const Header = () => {
           </span>
         )}
 
+        {/* Profile Button */}
+        {user && (
+          <button
+            onClick={() => navigate('/dashboard/profile')}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: 'transparent',
+              color: 'var(--text-color)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            Profile
+          </button>
+        )}
+
         {/* Theme Toggle with Slide Animation */}
         <div style={{
           position: 'relative',

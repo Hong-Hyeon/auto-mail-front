@@ -11,6 +11,7 @@ import { EmailHistoryPage } from './pages/EmailHistoryPage';
 import { EmailTemplatePage } from './pages/EmailTemplatePage';
 import { CompanyCrawlingPage } from './pages/CompanyCrawlingPage';
 import { ActionPage } from './pages/ActionPage';
+import { ProfilePage } from './pages/ProfilePage';
 import './App.css';
 
 function App() {
@@ -73,6 +74,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ActionPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />
