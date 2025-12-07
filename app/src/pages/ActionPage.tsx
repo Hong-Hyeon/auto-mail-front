@@ -28,6 +28,10 @@ export const ActionPage = () => {
   const [regionFilter, setRegionFilter] = useState<string>('all');
   const [emailSentFilter, setEmailSentFilter] = useState<'all' | 'sent' | 'not_sent'>('all');
   
+  // Industries and Regions from API
+  const [industries, setIndustries] = useState<string[]>([]);
+  const [regions, setRegions] = useState<string[]>([]);
+  
   // Options
   const [skipSent, setSkipSent] = useState(true);
   const [limit, setLimit] = useState(1000);
@@ -104,9 +108,24 @@ export const ActionPage = () => {
     }
   };
 
+  // Fetch industries and regions from API
+  const fetchFilters = async () => {
+    try {
+      const [industriesData, regionsData] = await Promise.all([
+        companyService.getIndustries(true),
+        companyService.getRegions(true),
+      ]);
+      setIndustries(industriesData);
+      setRegions(regionsData);
+    } catch (err: any) {
+      console.error('Failed to fetch filters:', err);
+    }
+  };
+
   useEffect(() => {
     fetchCompanies();
     fetchTemplates();
+    fetchFilters();
   }, []);
 
   // Debounced search
@@ -123,11 +142,11 @@ export const ActionPage = () => {
     let filtered = companies.filter((company) => company.is_active);
 
     if (industryFilter !== 'all') {
-      filtered = filtered.filter((company) => company.industry === industryFilter);
+      filtered = filtered.filter((company) => company.industry?.name === industryFilter);
     }
 
     if (regionFilter !== 'all') {
-      filtered = filtered.filter((company) => company.region === regionFilter);
+      filtered = filtered.filter((company) => company.region?.name === regionFilter);
     }
 
     // Email sent filter (only apply if email history data is available)
@@ -146,26 +165,6 @@ export const ActionPage = () => {
     return filtered;
   }, [companies, industryFilter, regionFilter, emailSentFilter, emailHistoryByCompany]);
 
-  // Get unique industries and regions for filters
-  const industries = useMemo(() => {
-    const unique = new Set<string>();
-    companies.forEach((company) => {
-      if (company.industry) {
-        unique.add(company.industry);
-      }
-    });
-    return Array.from(unique).sort();
-  }, [companies]);
-
-  const regions = useMemo(() => {
-    const unique = new Set<string>();
-    companies.forEach((company) => {
-      if (company.region) {
-        unique.add(company.region);
-      }
-    });
-    return Array.from(unique).sort();
-  }, [companies]);
 
   // Select All handler
   const handleSelectAll = (checked: boolean) => {
@@ -739,7 +738,7 @@ export const ActionPage = () => {
                         fontSize: '0.75rem',
                         color: 'var(--text-secondary)',
                       }}>
-                        {company.industry}
+                        {company.industry.name}
                       </div>
                     )}
                     {company.region && (
@@ -750,7 +749,7 @@ export const ActionPage = () => {
                         fontSize: '0.75rem',
                         color: 'var(--text-secondary)',
                       }}>
-                        {company.region}
+                        {company.region.name}
                       </div>
                     )}
                   </div>
@@ -866,26 +865,40 @@ export const ActionPage = () => {
             gap: '1rem',
           }}>
             {/* Skip Sent Option */}
-            <label style={{
+            <div style={{
               display: 'flex',
-              alignItems: 'center',
+              flexDirection: 'column',
               gap: '0.5rem',
-              cursor: 'pointer',
-              color: 'var(--text-color)',
-              fontSize: '0.875rem',
             }}>
-              <input
-                type="checkbox"
-                checked={skipSent}
-                onChange={(e) => setSkipSent(e.target.checked)}
-                style={{
-                  width: '18px',
-                  height: '18px',
-                  cursor: 'pointer',
-                }}
-              />
-              <span>Skip companies that already received email today</span>
-            </label>
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                cursor: 'pointer',
+                color: 'var(--text-color)',
+                fontSize: '0.875rem',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={skipSent}
+                  onChange={(e) => setSkipSent(e.target.checked)}
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    cursor: 'pointer',
+                  }}
+                />
+                <span>Skip companies that have ever received this template before</span>
+              </label>
+              <div style={{
+                marginLeft: '1.75rem',
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                lineHeight: '1.4',
+              }}>
+                When enabled, companies that have previously received this template will be automatically skipped to avoid duplicate emails.
+              </div>
+            </div>
 
             {/* Limit Option */}
             <div style={{

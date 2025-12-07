@@ -3,7 +3,7 @@
  */
 
 import apiClient from './api';
-import type { Company, CompanyCreate, CompanyUpdate, CompanyListResponse, CompanyUploadResponse, CompanyExistsResponse } from '../types/company';
+import type { Company, CompanyCreate, CompanyUpdate, CompanyListResponse, CompanyUploadResponse, CompanyExistsResponse, IndustryListResponse, RegionListResponse, IndustryFullListResponse, RegionFullListResponse } from '../types/company';
 
 export interface CompanyListParams {
   skip?: number;
@@ -78,6 +78,46 @@ export const companyService = {
     // URL encode company name to handle special characters
     const encodedName = encodeURIComponent(companyName);
     const response = await apiClient.get<CompanyExistsResponse>(`/companies/check/${encodedName}`);
+    return response.data;
+  },
+
+  /**
+   * Get list of industries (used by companies)
+   */
+  getIndustries: async (isActive: boolean = true): Promise<string[]> => {
+    const response = await apiClient.get<IndustryListResponse>('/companies/industries', {
+      params: { is_active: isActive },
+    });
+    return response.data.industries;
+  },
+
+  /**
+   * Get list of regions (used by companies)
+   */
+  getRegions: async (isActive: boolean = true): Promise<string[]> => {
+    const response = await apiClient.get<RegionListResponse>('/companies/regions', {
+      params: { is_active: isActive },
+    });
+    return response.data.regions;
+  },
+
+  /**
+   * Get list of all industries with ID and name (for forms)
+   */
+  getIndustriesFull: async (isActive: boolean = true): Promise<IndustryFullListResponse> => {
+    const response = await apiClient.get<IndustryFullListResponse>('/companies/industries-full', {
+      params: { is_active: isActive },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get list of all regions with ID and name (for forms)
+   */
+  getRegionsFull: async (isActive: boolean = true): Promise<RegionFullListResponse> => {
+    const response = await apiClient.get<RegionFullListResponse>('/companies/regions-full', {
+      params: { is_active: isActive },
+    });
     return response.data;
   },
 };

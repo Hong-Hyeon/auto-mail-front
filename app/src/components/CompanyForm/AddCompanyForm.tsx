@@ -2,9 +2,9 @@
  * Add Company Form Component
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { companyService } from '../../services/companyService';
-import type { CompanyCreate } from '../../types/company';
+import type { CompanyCreate, IndustryInfo, RegionInfo } from '../../types/company';
 
 interface AddCompanyFormProps {
   onSubmit: (companyData: CompanyCreate) => Promise<void>;
@@ -19,8 +19,8 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
     contact_phone: '',
     contact_email: '',
     address: '',
-    industry: '',
-    region: '',
+    industry_id: null,
+    region_id: null,
     description: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -28,6 +28,37 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
   const [checkingCompany, setCheckingCompany] = useState(false);
   const [companyExists, setCompanyExists] = useState<boolean | null>(null);
   const [existingCompany, setExistingCompany] = useState<any>(null);
+  
+  // Industries and Regions for select dropdowns
+  const [industries, setIndustries] = useState<IndustryInfo[]>([]);
+  const [regions, setRegions] = useState<RegionInfo[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
+  
+  // Fetch industries and regions on mount
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        setLoadingOptions(true);
+        setOptionsError(null);
+        console.log('[AddCompanyForm] Fetching industries and regions...');
+        const [industriesData, regionsData] = await Promise.all([
+          companyService.getIndustriesFull(true),
+          companyService.getRegionsFull(true),
+        ]);
+        console.log('[AddCompanyForm] Industries:', industriesData);
+        console.log('[AddCompanyForm] Regions:', regionsData);
+        setIndustries(industriesData.industries || []);
+        setRegions(regionsData.regions || []);
+      } catch (err: any) {
+        console.error('[AddCompanyForm] Failed to fetch industries/regions:', err);
+        setOptionsError(err.response?.data?.detail || err.message || 'Failed to load options');
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+    fetchOptions();
+  }, []);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -67,8 +98,8 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
         contact_phone: formData.contact_phone?.trim() || null,
         contact_email: formData.contact_email?.trim() || null,
         address: formData.address?.trim() || null,
-        industry: formData.industry?.trim() || null,
-        region: formData.region?.trim() || null,
+        industry_id: formData.industry_id || null,
+        region_id: formData.region_id || null,
         description: formData.description?.trim() || null,
       });
     } catch (err: any) {
@@ -90,6 +121,17 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
     if (field === 'name') {
       setCompanyExists(null);
       setExistingCompany(null);
+    }
+  };
+
+  const handleChangeId = (field: 'industry_id' | 'region_id', value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value || null }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
@@ -160,23 +202,23 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
           Company Name <span style={{ color: '#dc2626' }}>*</span>
         </label>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <input
-            id="name"
-            type="text"
-            value={formData.name}
-            onChange={(e) => handleChange('name', e.target.value)}
-            disabled={loading}
-            style={{
+        <input
+          id="name"
+          type="text"
+          value={formData.name}
+          onChange={(e) => handleChange('name', e.target.value)}
+          disabled={loading}
+          style={{
               flex: 1,
-              padding: '0.625rem 0.875rem',
+            padding: '0.625rem 0.875rem',
               border: `1px solid ${errors.name ? '#dc2626' : companyExists === true ? '#f59e0b' : companyExists === false ? '#10b981' : 'var(--border-color)'}`,
-              borderRadius: '6px',
-              fontSize: '0.875rem',
-              backgroundColor: 'var(--bg-color)',
-              color: 'var(--text-color)',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
+            borderRadius: '6px',
+            fontSize: '0.875rem',
+            backgroundColor: 'var(--bg-color)',
+            color: 'var(--text-color)',
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -386,7 +428,7 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
       {/* Industry */}
       <div style={{ marginBottom: '1.25rem' }}>
         <label
-          htmlFor="industry"
+          htmlFor="industry_id"
           style={{
             display: 'block',
             marginBottom: '0.5rem',
@@ -397,30 +439,59 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
         >
           Industry
         </label>
-        <input
-          id="industry"
-          type="text"
-          value={formData.industry || ''}
-          onChange={(e) => handleChange('industry', e.target.value)}
-          disabled={loading}
-          style={{
-            width: '100%',
+        {loadingOptions ? (
+          <div style={{
             padding: '0.625rem 0.875rem',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
+            color: 'var(--text-secondary)',
             fontSize: '0.875rem',
-            backgroundColor: 'var(--bg-color)',
-            color: 'var(--text-color)',
-            outline: 'none',
-            boxSizing: 'border-box',
-          }}
-        />
+          }}>
+            Loading industries...
+          </div>
+        ) : optionsError ? (
+          <div style={{
+            padding: '0.625rem 0.875rem',
+            color: '#dc2626',
+            fontSize: '0.875rem',
+          }}>
+            Error: {optionsError}
+          </div>
+        ) : (
+          <select
+            id="industry_id"
+            value={formData.industry_id || ''}
+            onChange={(e) => handleChangeId('industry_id', e.target.value)}
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '0.625rem 0.875rem',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              fontSize: '0.875rem',
+              backgroundColor: 'var(--bg-color)',
+              color: 'var(--text-color)',
+              outline: 'none',
+              boxSizing: 'border-box',
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <option value="">Select Industry (Optional)</option>
+            {industries.length === 0 ? (
+              <option value="" disabled>No industries available</option>
+            ) : (
+              industries.map((industry) => (
+                <option key={industry.id} value={industry.id}>
+                  {industry.name}
+                </option>
+              ))
+            )}
+          </select>
+        )}
       </div>
 
       {/* Region */}
       <div style={{ marginBottom: '1.25rem' }}>
         <label
-          htmlFor="region"
+          htmlFor="region_id"
           style={{
             display: 'block',
             marginBottom: '0.5rem',
@@ -431,24 +502,53 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
         >
           Region
         </label>
-        <input
-          id="region"
-          type="text"
-          value={formData.region || ''}
-          onChange={(e) => handleChange('region', e.target.value)}
-          disabled={loading}
-          style={{
-            width: '100%',
+        {loadingOptions ? (
+          <div style={{
             padding: '0.625rem 0.875rem',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
+            color: 'var(--text-secondary)',
             fontSize: '0.875rem',
-            backgroundColor: 'var(--bg-color)',
-            color: 'var(--text-color)',
-            outline: 'none',
-            boxSizing: 'border-box',
-          }}
-        />
+          }}>
+            Loading regions...
+          </div>
+        ) : optionsError ? (
+          <div style={{
+            padding: '0.625rem 0.875rem',
+            color: '#dc2626',
+            fontSize: '0.875rem',
+          }}>
+            Error: {optionsError}
+          </div>
+        ) : (
+          <select
+            id="region_id"
+            value={formData.region_id || ''}
+            onChange={(e) => handleChangeId('region_id', e.target.value)}
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '0.625rem 0.875rem',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              fontSize: '0.875rem',
+              backgroundColor: 'var(--bg-color)',
+              color: 'var(--text-color)',
+              outline: 'none',
+              boxSizing: 'border-box',
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <option value="">Select Region (Optional)</option>
+            {regions.length === 0 ? (
+              <option value="" disabled>No regions available</option>
+            ) : (
+              regions.map((region) => (
+                <option key={region.id} value={region.id}>
+                  {region.name}
+                </option>
+              ))
+            )}
+          </select>
+        )}
       </div>
 
       {/* Description */}

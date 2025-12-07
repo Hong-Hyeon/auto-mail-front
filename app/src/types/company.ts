@@ -16,8 +16,8 @@ export interface Company {
   contact_phone: string | null;
   contact_email: string | null;
   address: string | null;
-  industry: string | null;
-  region: string | null;
+  industry: IndustryInfo | null;
+  region: RegionInfo | null;
   description: string | null;
   created_by: string | null;
   creator: UserInfo | null;
@@ -26,14 +26,26 @@ export interface Company {
   updated_at: string;
 }
 
+export interface IndustryInfo {
+  id: string;
+  name: string;
+  code?: string | null;
+}
+
+export interface RegionInfo {
+  id: string;
+  name: string;
+  code?: string | null;
+}
+
 export interface CompanyCreate {
   name: string;
   email: string;
   contact_phone?: string | null;
   contact_email?: string | null;
   address?: string | null;
-  industry?: string | null;
-  region?: string | null;
+  industry_id?: string | null;
+  region_id?: string | null;
   description?: string | null;
 }
 
@@ -43,8 +55,8 @@ export interface CompanyUpdate {
   contact_phone?: string | null;
   contact_email?: string | null;
   address?: string | null;
-  industry?: string | null;
-  region?: string | null;
+  industry_id?: string | null;
+  region_id?: string | null;
   description?: string | null;
   is_active?: boolean;
 }
@@ -76,5 +88,25 @@ export interface CompanyUploadResult {
 export interface CompanyExistsResponse {
   exists: boolean;
   company: Company | null;
+}
+
+export interface IndustryListResponse {
+  industries: string[];
+  count: number;
+}
+
+export interface RegionListResponse {
+  regions: string[];
+  count: number;
+}
+
+export interface IndustryFullListResponse {
+  industries: IndustryInfo[];
+  count: number;
+}
+
+export interface RegionFullListResponse {
+  regions: RegionInfo[];
+  count: number;
 }
 

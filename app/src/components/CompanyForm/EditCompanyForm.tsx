@@ -3,7 +3,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import type { Company, CompanyUpdate } from '../../types/company';
+import { companyService } from '../../services/companyService';
+import type { Company, CompanyUpdate, IndustryInfo, RegionInfo } from '../../types/company';
 
 interface EditCompanyFormProps {
   company: Company;
@@ -19,12 +20,33 @@ export const EditCompanyForm = ({ company, onSubmit, onCancel, loading = false }
     contact_phone: company.contact_phone || '',
     contact_email: company.contact_email || '',
     address: company.address || '',
-    industry: company.industry || '',
-    region: company.region || '',
+    industry_id: company.industry?.id || null,
+    region_id: company.region?.id || null,
     description: company.description || '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  
+  // Industries and Regions for select dropdowns
+  const [industries, setIndustries] = useState<IndustryInfo[]>([]);
+  const [regions, setRegions] = useState<RegionInfo[]>([]);
+  
+  // Fetch industries and regions on mount
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const [industriesData, regionsData] = await Promise.all([
+          companyService.getIndustriesFull(true),
+          companyService.getRegionsFull(true),
+        ]);
+        setIndustries(industriesData.industries);
+        setRegions(regionsData.regions);
+      } catch (err) {
+        console.error('Failed to fetch industries/regions:', err);
+      }
+    };
+    fetchOptions();
+  }, []);
 
   useEffect(() => {
     // Reset form when company changes
@@ -34,8 +56,8 @@ export const EditCompanyForm = ({ company, onSubmit, onCancel, loading = false }
       contact_phone: company.contact_phone || '',
       contact_email: company.contact_email || '',
       address: company.address || '',
-      industry: company.industry || '',
-      region: company.region || '',
+      industry_id: company.industry?.id || null,
+      region_id: company.region?.id || null,
       description: company.description || '',
     });
     setErrors({});
@@ -78,8 +100,8 @@ export const EditCompanyForm = ({ company, onSubmit, onCancel, loading = false }
         contact_phone: formData.contact_phone?.trim() || null,
         contact_email: formData.contact_email?.trim() || null,
         address: formData.address?.trim() || null,
-        industry: formData.industry?.trim() || null,
-        region: formData.region?.trim() || null,
+        industry_id: formData.industry_id || null,
+        region_id: formData.region_id || null,
         description: formData.description?.trim() || null,
       });
     } catch (err: any) {
@@ -90,6 +112,17 @@ export const EditCompanyForm = ({ company, onSubmit, onCancel, loading = false }
   const handleChange = (field: keyof CompanyUpdate, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleChangeId = (field: 'industry_id' | 'region_id', value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value || null }));
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -317,7 +350,7 @@ export const EditCompanyForm = ({ company, onSubmit, onCancel, loading = false }
       {/* Industry */}
       <div style={{ marginBottom: '1.25rem' }}>
         <label
-          htmlFor="edit-industry"
+          htmlFor="edit-industry_id"
           style={{
             display: 'block',
             marginBottom: '0.5rem',
@@ -328,11 +361,10 @@ export const EditCompanyForm = ({ company, onSubmit, onCancel, loading = false }
         >
           Industry
         </label>
-        <input
-          id="edit-industry"
-          type="text"
-          value={formData.industry || ''}
-          onChange={(e) => handleChange('industry', e.target.value)}
+        <select
+          id="edit-industry_id"
+          value={formData.industry_id || ''}
+          onChange={(e) => handleChangeId('industry_id', e.target.value)}
           disabled={loading}
           style={{
             width: '100%',
@@ -344,14 +376,22 @@ export const EditCompanyForm = ({ company, onSubmit, onCancel, loading = false }
             color: 'var(--text-color)',
             outline: 'none',
             boxSizing: 'border-box',
+            cursor: loading ? 'not-allowed' : 'pointer',
           }}
-        />
+        >
+          <option value="">Select Industry (Optional)</option>
+          {industries.map((industry) => (
+            <option key={industry.id} value={industry.id}>
+              {industry.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Region */}
       <div style={{ marginBottom: '1.25rem' }}>
         <label
-          htmlFor="edit-region"
+          htmlFor="edit-region_id"
           style={{
             display: 'block',
             marginBottom: '0.5rem',
@@ -362,11 +402,10 @@ export const EditCompanyForm = ({ company, onSubmit, onCancel, loading = false }
         >
           Region
         </label>
-        <input
-          id="edit-region"
-          type="text"
-          value={formData.region || ''}
-          onChange={(e) => handleChange('region', e.target.value)}
+        <select
+          id="edit-region_id"
+          value={formData.region_id || ''}
+          onChange={(e) => handleChangeId('region_id', e.target.value)}
           disabled={loading}
           style={{
             width: '100%',
@@ -378,8 +417,16 @@ export const EditCompanyForm = ({ company, onSubmit, onCancel, loading = false }
             color: 'var(--text-color)',
             outline: 'none',
             boxSizing: 'border-box',
+            cursor: loading ? 'not-allowed' : 'pointer',
           }}
-        />
+        >
+          <option value="">Select Region (Optional)</option>
+          {regions.map((region) => (
+            <option key={region.id} value={region.id}>
+              {region.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Description */}

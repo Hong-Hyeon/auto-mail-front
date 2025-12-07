@@ -565,14 +565,14 @@ export const CompaniesPage = () => {
                           fontSize: '0.875rem',
                           color: 'var(--text-secondary)',
                         }}>
-                          {company.industry || '-'}
+                          {company.industry?.name || '-'}
                         </td>
                         <td style={{
                           padding: '0.875rem 1rem',
                           fontSize: '0.875rem',
                           color: 'var(--text-secondary)',
                         }}>
-                          {company.region || '-'}
+                          {company.region?.name || '-'}
                         </td>
                         <td style={{
                           padding: '0.875rem 1rem',
