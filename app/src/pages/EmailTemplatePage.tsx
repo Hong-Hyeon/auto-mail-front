@@ -181,27 +181,27 @@ export const EmailTemplatePage = () => {
             Email Template
           </h1>
           <AdminOnly>
-            <button
-              onClick={handleCreate}
-              style={{
-                padding: '0.625rem 1.25rem',
-                backgroundColor: '#2563eb',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#1d4ed8';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#2563eb';
-              }}
-            >
-              Add Template
-            </button>
+          <button
+            onClick={handleCreate}
+            style={{
+              padding: '0.625rem 1.25rem',
+              backgroundColor: '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#1d4ed8';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#2563eb';
+            }}
+          >
+            Add Template
+          </button>
           </AdminOnly>
         </div>
 
@@ -472,53 +472,53 @@ export const EmailTemplatePage = () => {
                               Preview
                             </button>
                             <AdminOnly>
-                              <button
-                                onClick={() => handleEdit(template)}
-                                style={{
-                                  padding: '0.375rem 0.75rem',
-                                  backgroundColor: 'transparent',
-                                  color: '#2563eb',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  fontSize: '0.875rem',
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'transparent';
-                                }}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDelete(template)}
-                                disabled={!template.is_active}
-                                style={{
-                                  padding: '0.375rem 0.75rem',
-                                  backgroundColor: template.is_active ? '#dc2626' : '#9ca3af',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: template.is_active ? 'pointer' : 'not-allowed',
-                                  fontSize: '0.75rem',
-                                  fontWeight: '500',
-                                  opacity: template.is_active ? 1 : 0.6,
-                                }}
-                                onMouseEnter={(e) => {
-                                  if (template.is_active) {
-                                    e.currentTarget.style.opacity = '0.8';
-                                  }
-                                }}
-                                onMouseLeave={(e) => {
-                                  if (template.is_active) {
-                                    e.currentTarget.style.opacity = '1';
-                                  }
-                                }}
-                              >
-                                Inactive
-                              </button>
+                            <button
+                              onClick={() => handleEdit(template)}
+                              style={{
+                                padding: '0.375rem 0.75rem',
+                                backgroundColor: 'transparent',
+                                color: '#2563eb',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '0.875rem',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(template)}
+                              disabled={!template.is_active}
+                              style={{
+                                padding: '0.375rem 0.75rem',
+                                backgroundColor: template.is_active ? '#dc2626' : '#9ca3af',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: template.is_active ? 'pointer' : 'not-allowed',
+                                fontSize: '0.75rem',
+                                fontWeight: '500',
+                                opacity: template.is_active ? 1 : 0.6,
+                              }}
+                              onMouseEnter={(e) => {
+                                if (template.is_active) {
+                                  e.currentTarget.style.opacity = '0.8';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (template.is_active) {
+                                  e.currentTarget.style.opacity = '1';
+                                }
+                              }}
+                            >
+                              Inactive
+                            </button>
                             </AdminOnly>
                           </div>
                         </td>

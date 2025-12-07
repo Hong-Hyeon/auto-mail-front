@@ -73,3 +73,8 @@ export interface CompanyUploadResult {
   error?: string | null;
 }
 
+export interface CompanyExistsResponse {
+  exists: boolean;
+  company: Company | null;
+}
+

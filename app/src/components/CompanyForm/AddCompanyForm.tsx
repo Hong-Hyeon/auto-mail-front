@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import { companyService } from '../../services/companyService';
 import type { CompanyCreate } from '../../types/company';
 
 interface AddCompanyFormProps {
@@ -24,12 +25,17 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [checkingCompany, setCheckingCompany] = useState(false);
+  const [companyExists, setCompanyExists] = useState<boolean | null>(null);
+  const [existingCompany, setExistingCompany] = useState<any>(null);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Company name is required';
+    } else if (companyExists === true) {
+      newErrors.name = `Company "${formData.name.trim()}" already exists${existingCompany?.email ? ` (Email: ${existingCompany.email})` : ''}`;
     }
 
     if (!formData.email.trim()) {
@@ -80,6 +86,47 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
         return newErrors;
       });
     }
+    // Reset company existence check when name changes
+    if (field === 'name') {
+      setCompanyExists(null);
+      setExistingCompany(null);
+    }
+  };
+
+  const handleCheckCompany = async () => {
+    if (!formData.name.trim()) {
+      setErrors((prev) => ({ ...prev, name: 'Please enter a company name first' }));
+      return;
+    }
+
+    try {
+      setCheckingCompany(true);
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.name;
+        return newErrors;
+      });
+      
+      const result = await companyService.checkCompanyExists(formData.name.trim());
+      setCompanyExists(result.exists);
+      setExistingCompany(result.company);
+      
+      if (result.exists) {
+        setErrors((prev) => ({
+          ...prev,
+          name: `Company "${formData.name.trim()}" already exists${result.company?.email ? ` (Email: ${result.company.email})` : ''}`,
+        }));
+      }
+    } catch (err: any) {
+      setErrors((prev) => ({
+        ...prev,
+        name: err.response?.data?.detail || err.message || 'Failed to check company',
+      }));
+      setCompanyExists(null);
+      setExistingCompany(null);
+    } finally {
+      setCheckingCompany(false);
+    }
   };
 
   return (
@@ -112,24 +159,63 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
         >
           Company Name <span style={{ color: '#dc2626' }}>*</span>
         </label>
-        <input
-          id="name"
-          type="text"
-          value={formData.name}
-          onChange={(e) => handleChange('name', e.target.value)}
-          disabled={loading}
-          style={{
-            width: '100%',
-            padding: '0.625rem 0.875rem',
-            border: `1px solid ${errors.name ? '#dc2626' : 'var(--border-color)'}`,
-            borderRadius: '6px',
-            fontSize: '0.875rem',
-            backgroundColor: 'var(--bg-color)',
-            color: 'var(--text-color)',
-            outline: 'none',
-            boxSizing: 'border-box',
-          }}
-        />
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <input
+            id="name"
+            type="text"
+            value={formData.name}
+            onChange={(e) => handleChange('name', e.target.value)}
+            disabled={loading}
+            style={{
+              flex: 1,
+              padding: '0.625rem 0.875rem',
+              border: `1px solid ${errors.name ? '#dc2626' : companyExists === true ? '#f59e0b' : companyExists === false ? '#10b981' : 'var(--border-color)'}`,
+              borderRadius: '6px',
+              fontSize: '0.875rem',
+              backgroundColor: 'var(--bg-color)',
+              color: 'var(--text-color)',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleCheckCompany();
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleCheckCompany}
+            disabled={loading || checkingCompany || !formData.name.trim()}
+            style={{
+              padding: '0.625rem 1rem',
+              backgroundColor: (loading || checkingCompany || !formData.name.trim()) ? '#9ca3af' : '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: (loading || checkingCompany || !formData.name.trim()) ? 'not-allowed' : 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {checkingCompany ? 'Checking...' : 'Check'}
+          </button>
+        </div>
+        {companyExists === false && (
+          <div style={{
+            marginTop: '0.25rem',
+            fontSize: '0.75rem',
+            color: '#10b981',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+          }}>
+            <span>✓</span>
+            <span>Company name is available</span>
+          </div>
+        )}
         {errors.name && (
           <div style={{
             marginTop: '0.25rem',
@@ -426,14 +512,14 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
         </button>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || companyExists === true}
           style={{
             padding: '0.625rem 1.25rem',
-            backgroundColor: loading ? '#9ca3af' : '#2563eb',
+            backgroundColor: (loading || companyExists === true) ? '#9ca3af' : '#2563eb',
             color: 'white',
             border: 'none',
             borderRadius: '6px',
-            cursor: loading ? 'not-allowed' : 'pointer',
+            cursor: (loading || companyExists === true) ? 'not-allowed' : 'pointer',
             fontSize: '0.875rem',
             fontWeight: '600',
           }}

@@ -248,29 +248,29 @@ export const CompaniesPage = () => {
             gap: '0.75rem',
           }}>
             <AdminOnly>
-              <label
-                style={{
-                  padding: '0.625rem 1.25rem',
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                }}
-              >
-                📄 Upload Excel
-                <input
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={handleFileUpload}
-                  style={{ display: 'none' }}
-                />
-              </label>
+            <label
+              style={{
+                padding: '0.625rem 1.25rem',
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              📄 Upload Excel
+              <input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+              />
+            </label>
             </AdminOnly>
             <button
               onClick={() => setIsAddCompanyModalOpen(true)}
@@ -643,21 +643,21 @@ export const CompaniesPage = () => {
                               Edit
                             </button>
                             <AdminOnly>
-                              <button
-                                onClick={() => handleDelete(company.id)}
-                                style={{
-                                  padding: '0.375rem 0.75rem',
-                                  backgroundColor: '#dc2626',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                  fontSize: '0.75rem',
-                                  fontWeight: '500',
-                                }}
-                              >
-                                Delete
-                              </button>
+                            <button
+                              onClick={() => handleDelete(company.id)}
+                              style={{
+                                padding: '0.375rem 0.75rem',
+                                backgroundColor: '#dc2626',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '0.75rem',
+                                fontWeight: '500',
+                              }}
+                            >
+                              Delete
+                            </button>
                             </AdminOnly>
                           </div>
                         </td>

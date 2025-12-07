@@ -68,7 +68,7 @@ docker-compose -f docker/docker-compose.prod.yml up --build
 프로젝트 루트에 `.env` 파일을 생성하고 다음 변수를 설정하세요:
 
 ```env
-VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_API_BASE_URL=http://98.93.234.2:8000/api/v1
 ```
 
 Docker를 사용하는 경우, `docker-compose.yml`의 `environment` 섹션에서 환경 변수를 설정할 수 있습니다.

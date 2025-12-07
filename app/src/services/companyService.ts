@@ -3,7 +3,7 @@
  */
 
 import apiClient from './api';
-import type { Company, CompanyCreate, CompanyUpdate, CompanyListResponse, CompanyUploadResponse } from '../types/company';
+import type { Company, CompanyCreate, CompanyUpdate, CompanyListResponse, CompanyUploadResponse, CompanyExistsResponse } from '../types/company';
 
 export interface CompanyListParams {
   skip?: number;
@@ -68,6 +68,16 @@ export const companyService = {
         },
       }
     );
+    return response.data;
+  },
+
+  /**
+   * Check if company exists by name
+   */
+  checkCompanyExists: async (companyName: string): Promise<CompanyExistsResponse> => {
+    // URL encode company name to handle special characters
+    const encodedName = encodeURIComponent(companyName);
+    const response = await apiClient.get<CompanyExistsResponse>(`/companies/check/${encodedName}`);
     return response.data;
   },
 };
