@@ -72,6 +72,28 @@ export const companyService = {
   },
 
   /**
+   * Download Excel template for company upload (authenticated users)
+   */
+  downloadUploadTemplate: async (): Promise<void> => {
+    const response = await apiClient.get('/companies/upload-template', {
+      responseType: 'blob',
+    });
+    
+    // Create blob URL and trigger download
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'company_upload_template.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /**
    * Check if company exists by name
    */
   checkCompanyExists: async (companyName: string): Promise<CompanyExistsResponse> => {

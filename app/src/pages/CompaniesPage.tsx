@@ -41,6 +41,7 @@ export const CompaniesPage = () => {
   const [isEditCompanyModalOpen, setIsEditCompanyModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [isUpdatingCompany, setIsUpdatingCompany] = useState(false);
+  const [isDownloadTemplateModalOpen, setIsDownloadTemplateModalOpen] = useState(false);
 
   // Fetch companies
   const fetchCompanies = async () => {
@@ -222,6 +223,19 @@ export const CompaniesPage = () => {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    setIsDownloadTemplateModalOpen(true);
+  };
+
+  const confirmDownloadTemplate = async () => {
+    try {
+      await companyService.downloadUploadTemplate();
+      setIsDownloadTemplateModalOpen(false);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to download template');
+    }
+  };
+
   const totalPages = Math.ceil(totalCompanies / pageSize);
   const startIndex = (currentPage - 1) * pageSize + 1;
   const endIndex = Math.min(currentPage * pageSize, totalCompanies);
@@ -258,7 +272,24 @@ export const CompaniesPage = () => {
             display: 'flex',
             gap: '0.75rem',
           }}>
-            <AdminOnly>
+            <button
+              onClick={handleDownloadTemplate}
+              style={{
+                padding: '0.625rem 1.25rem',
+                backgroundColor: '#6366f1',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              📥 Download Template
+            </button>
             <label
               style={{
                 padding: '0.625rem 1.25rem',
@@ -282,7 +313,6 @@ export const CompaniesPage = () => {
                 style={{ display: 'none' }}
               />
             </label>
-            </AdminOnly>
             <button
               onClick={() => setIsAddCompanyModalOpen(true)}
               style={{
@@ -802,6 +832,95 @@ export const CompaniesPage = () => {
           />
         </Modal>
       )}
+
+      {/* Download Template Warning Modal */}
+      <Modal
+        isOpen={isDownloadTemplateModalOpen}
+        onClose={() => setIsDownloadTemplateModalOpen(false)}
+        title="⚠️ 엑셀 양식 다운로드"
+        size="medium"
+      >
+        <div style={{
+          padding: '1.5rem',
+        }}>
+          <div style={{
+            marginBottom: '1.5rem',
+            color: 'var(--text-color)',
+            fontSize: '0.875rem',
+            lineHeight: '1.6',
+          }}>
+            <p style={{ marginBottom: '1rem', fontWeight: '600' }}>
+              엑셀 양식을 다운로드하기 전에 다음 사항을 확인해주세요:
+            </p>
+            <ul style={{
+              marginLeft: '1.5rem',
+              marginBottom: '1rem',
+              paddingLeft: '0.5rem',
+            }}>
+              <li style={{ marginBottom: '0.5rem' }}>
+                <strong>모든 필수 컬럼</strong>에 데이터를 입력해야 합니다.
+              </li>
+              <li style={{ marginBottom: '0.5rem' }}>
+                필수 컬럼: <strong>회사명, contact_email, 업종, 지역, 연락처, 주소, 설명</strong>
+              </li>
+              <li style={{ marginBottom: '0.5rem' }}>
+                업종과 지역은 드롭다운 목록에서 선택해야 합니다.
+              </li>
+              <li>
+                모든 데이터를 입력하지 않으면 업로드가 실패할 수 있습니다.
+              </li>
+            </ul>
+            <p style={{
+              marginTop: '1rem',
+              padding: '0.75rem',
+              backgroundColor: '#fef3c7',
+              border: '1px solid #fbbf24',
+              borderRadius: '6px',
+              color: '#92400e',
+              fontSize: '0.875rem',
+            }}>
+              ⚠️ <strong>주의:</strong> 모든 필수 데이터를 입력한 후 업로드해주세요.
+            </p>
+          </div>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '0.75rem',
+            marginTop: '1.5rem',
+          }}>
+            <button
+              onClick={() => setIsDownloadTemplateModalOpen(false)}
+              style={{
+                padding: '0.625rem 1.25rem',
+                backgroundColor: 'transparent',
+                color: 'var(--text-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+              }}
+            >
+              취소
+            </button>
+            <button
+              onClick={confirmDownloadTemplate}
+              style={{
+                padding: '0.625rem 1.25rem',
+                backgroundColor: '#6366f1',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+              }}
+            >
+              다운로드
+            </button>
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 };
