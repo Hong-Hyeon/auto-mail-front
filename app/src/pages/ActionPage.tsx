@@ -9,12 +9,14 @@ import { companyService } from '../services/companyService';
 import { mailService } from '../services/mailService';
 import { emailHistoryService } from '../services/emailHistoryService';
 import { emailTemplateService } from '../services/emailTemplateService';
+import { useAuth } from '../contexts/AuthContext';
 import type { Company } from '../types/company';
 import type { MailSendResponse } from '../types/mail';
 import type { EmailHistory } from '../types/emailHistory';
 import type { EmailTemplate } from '../types/emailTemplate';
 
 export const ActionPage = () => {
+  const { isAdmin } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +35,16 @@ export const ActionPage = () => {
   const [regions, setRegions] = useState<string[]>([]);
   
   // Options
+  // For non-admin users, skipSent is always true
   const [skipSent, setSkipSent] = useState(true);
   const [limit, setLimit] = useState(1000);
+  
+  // Ensure skipSent is always true for non-admin users
+  useEffect(() => {
+    if (!isAdmin) {
+      setSkipSent(true);
+    }
+  }, [isAdmin]);
   
   // Templates
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
@@ -843,102 +853,104 @@ export const ActionPage = () => {
           </div>
         </div>
 
-        {/* Options Section */}
-        <div style={{
-          padding: '1.5rem',
-          backgroundColor: 'var(--card-bg)',
-          borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        }}>
-          <h2 style={{
-            color: 'var(--text-color)',
-            fontSize: '1.25rem',
-            fontWeight: '600',
-            marginBottom: '1.5rem',
-          }}>
-            Options
-          </h2>
-
+        {/* Options Section - Only visible for admin users */}
+        {isAdmin && (
           <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1rem',
+            padding: '1.5rem',
+            backgroundColor: 'var(--card-bg)',
+            borderRadius: '8px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
           }}>
-            {/* Skip Sent Option */}
+            <h2 style={{
+              color: 'var(--text-color)',
+              fontSize: '1.25rem',
+              fontWeight: '600',
+              marginBottom: '1.5rem',
+            }}>
+              Options
+            </h2>
+
             <div style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.5rem',
+              gap: '1rem',
             }}>
-              <label style={{
+              {/* Skip Sent Option */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+              }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  cursor: 'pointer',
+                  color: 'var(--text-color)',
+                  fontSize: '0.875rem',
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={skipSent}
+                    onChange={(e) => setSkipSent(e.target.checked)}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <span>Skip companies that have ever received this template before</span>
+                </label>
+                <div style={{
+                  marginLeft: '1.75rem',
+                  fontSize: '0.75rem',
+                  color: 'var(--text-secondary)',
+                  lineHeight: '1.4',
+                }}>
+                  When enabled, companies that have previously received this template will be automatically skipped to avoid duplicate emails.
+                </div>
+              </div>
+
+              {/* Limit Option */}
+              <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                cursor: 'pointer',
-                color: 'var(--text-color)',
-                fontSize: '0.875rem',
+                gap: '0.75rem',
               }}>
+                <label style={{
+                  color: 'var(--text-color)',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                }}>
+                  Limit:
+                </label>
                 <input
-                  type="checkbox"
-                  checked={skipSent}
-                  onChange={(e) => setSkipSent(e.target.checked)}
+                  type="number"
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value))}
+                  min={1}
+                  max={10000}
                   style={{
-                    width: '18px',
-                    height: '18px',
-                    cursor: 'pointer',
+                    padding: '0.5rem 0.75rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    fontSize: '0.875rem',
+                    backgroundColor: 'var(--bg-color)',
+                    color: 'var(--text-color)',
+                    outline: 'none',
+                    width: '120px',
                   }}
                 />
-                <span>Skip companies that have ever received this template before</span>
-              </label>
-              <div style={{
-                marginLeft: '1.75rem',
-                fontSize: '0.75rem',
-                color: 'var(--text-secondary)',
-                lineHeight: '1.4',
-              }}>
-                When enabled, companies that have previously received this template will be automatically skipped to avoid duplicate emails.
+                <span style={{
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.875rem',
+                }}>
+                  companies
+                </span>
               </div>
             </div>
-
-            {/* Limit Option */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-            }}>
-              <label style={{
-                color: 'var(--text-color)',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-              }}>
-                Limit:
-              </label>
-              <input
-                type="number"
-                value={limit}
-                onChange={(e) => setLimit(Number(e.target.value))}
-                min={1}
-                max={10000}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '6px',
-                  fontSize: '0.875rem',
-                  backgroundColor: 'var(--bg-color)',
-                  color: 'var(--text-color)',
-                  outline: 'none',
-                  width: '120px',
-                }}
-              />
-              <span style={{
-                color: 'var(--text-secondary)',
-                fontSize: '0.875rem',
-              }}>
-                companies
-              </span>
-            </div>
           </div>
-        </div>
+        )}
 
         {/* Send Result Section */}
         {sendResult && (

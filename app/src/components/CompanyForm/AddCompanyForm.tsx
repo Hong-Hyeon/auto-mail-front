@@ -2,7 +2,7 @@
  * Add Company Form Component
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { companyService } from '../../services/companyService';
 import type { CompanyCreate, IndustryInfo, RegionInfo } from '../../types/company';
 
@@ -60,6 +60,19 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
     fetchOptions();
   }, []);
 
+  // Check if all required fields are filled
+  const isFormValid = useMemo(() => {
+    return (
+      formData.name.trim() !== '' &&
+      formData.email.trim() !== '' &&
+      formData.industry_id !== null &&
+      formData.industry_id !== '' &&
+      formData.region_id !== null &&
+      formData.region_id !== '' &&
+      companyExists !== true
+    );
+  }, [formData.name, formData.email, formData.industry_id, formData.region_id, companyExists]);
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -77,6 +90,14 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
 
     if (formData.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_email)) {
       newErrors.contact_email = 'Invalid email format';
+    }
+
+    if (!formData.industry_id) {
+      newErrors.industry_id = 'Industry is required';
+    }
+
+    if (!formData.region_id) {
+      newErrors.region_id = 'Region is required';
     }
 
     setErrors(newErrors);
@@ -437,7 +458,7 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
             fontWeight: '500',
           }}
         >
-          Industry
+          Industry <span style={{ color: '#dc2626' }}>*</span>
         </label>
         {loadingOptions ? (
           <div style={{
@@ -464,7 +485,7 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
             style={{
               width: '100%',
               padding: '0.625rem 0.875rem',
-              border: '1px solid var(--border-color)',
+              border: errors.industry_id ? '1px solid #dc2626' : '1px solid var(--border-color)',
               borderRadius: '6px',
               fontSize: '0.875rem',
               backgroundColor: 'var(--bg-color)',
@@ -474,7 +495,7 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
-            <option value="">Select Industry (Optional)</option>
+            <option value="">Select Industry *</option>
             {industries.length === 0 ? (
               <option value="" disabled>No industries available</option>
             ) : (
@@ -485,6 +506,15 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
               ))
             )}
           </select>
+        )}
+        {errors.industry_id && (
+          <div style={{
+            marginTop: '0.25rem',
+            color: '#dc2626',
+            fontSize: '0.75rem',
+          }}>
+            {errors.industry_id}
+          </div>
         )}
       </div>
 
@@ -500,7 +530,7 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
             fontWeight: '500',
           }}
         >
-          Region
+          Region <span style={{ color: '#dc2626' }}>*</span>
         </label>
         {loadingOptions ? (
           <div style={{
@@ -527,7 +557,7 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
             style={{
               width: '100%',
               padding: '0.625rem 0.875rem',
-              border: '1px solid var(--border-color)',
+              border: errors.region_id ? '1px solid #dc2626' : '1px solid var(--border-color)',
               borderRadius: '6px',
               fontSize: '0.875rem',
               backgroundColor: 'var(--bg-color)',
@@ -537,7 +567,7 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
-            <option value="">Select Region (Optional)</option>
+            <option value="">Select Region *</option>
             {regions.length === 0 ? (
               <option value="" disabled>No regions available</option>
             ) : (
@@ -548,6 +578,15 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
               ))
             )}
           </select>
+        )}
+        {errors.region_id && (
+          <div style={{
+            marginTop: '0.25rem',
+            color: '#dc2626',
+            fontSize: '0.75rem',
+          }}>
+            {errors.region_id}
+          </div>
         )}
       </div>
 
@@ -612,14 +651,14 @@ export const AddCompanyForm = ({ onSubmit, onCancel, loading = false }: AddCompa
         </button>
         <button
           type="submit"
-          disabled={loading || companyExists === true}
+          disabled={loading || !isFormValid}
           style={{
             padding: '0.625rem 1.25rem',
-            backgroundColor: (loading || companyExists === true) ? '#9ca3af' : '#2563eb',
+            backgroundColor: (loading || !isFormValid) ? '#9ca3af' : '#2563eb',
             color: 'white',
             border: 'none',
             borderRadius: '6px',
-            cursor: (loading || companyExists === true) ? 'not-allowed' : 'pointer',
+            cursor: (loading || !isFormValid) ? 'not-allowed' : 'pointer',
             fontSize: '0.875rem',
             fontWeight: '600',
           }}

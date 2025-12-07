@@ -100,6 +100,17 @@ export const CompaniesPage = () => {
     const sorted = [...companies];
     
     sorted.sort((a, b) => {
+      // For non-admin users, prioritize their own companies first
+      if (!isAdmin && user) {
+        const aIsOwn = a.created_by === user.id;
+        const bIsOwn = b.created_by === user.id;
+        
+        // If one is own and the other is not, own comes first
+        if (aIsOwn && !bIsOwn) return -1;
+        if (!aIsOwn && bIsOwn) return 1;
+        // If both are own or both are not, continue with normal sorting
+      }
+      
       let aValue: any;
       let bValue: any;
 
@@ -126,7 +137,7 @@ export const CompaniesPage = () => {
     });
 
     return sorted;
-  }, [companies, sortBy, sortOrder]);
+  }, [companies, sortBy, sortOrder, isAdmin, user]);
 
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
