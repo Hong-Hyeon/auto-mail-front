@@ -9,11 +9,13 @@ import { companyService } from '../services/companyService';
 import { mailService } from '../services/mailService';
 import { emailHistoryService } from '../services/emailHistoryService';
 import { emailTemplateService } from '../services/emailTemplateService';
+import { userService } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import type { Company } from '../types/company';
 import type { MailSendResponse } from '../types/mail';
 import type { EmailHistory } from '../types/emailHistory';
 import type { EmailTemplate } from '../types/emailTemplate';
+import type { User } from '../types/user';
 
 export const ActionPage = () => {
   const { isAdmin } = useAuth();
@@ -29,10 +31,14 @@ export const ActionPage = () => {
   const [industryFilter, setIndustryFilter] = useState<string>('all');
   const [regionFilter, setRegionFilter] = useState<string>('all');
   const [emailSentFilter, setEmailSentFilter] = useState<'all' | 'sent' | 'not_sent'>('all');
+  const [createdByFilter, setCreatedByFilter] = useState<string>('all'); // Admin only
   
   // Industries and Regions from API
   const [industries, setIndustries] = useState<string[]>([]);
   const [regions, setRegions] = useState<string[]>([]);
+  
+  // Users for filter (admin only)
+  const [users, setUsers] = useState<User[]>([]);
   
   // Options
   // For non-admin users, skipSent is always true
@@ -74,6 +80,7 @@ export const ActionPage = () => {
         limit?: number;
         is_active?: boolean;
         search?: string;
+        created_by?: string;
       } = {
         skip: 0,
         limit: 1000, // Maximum allowed by backend
@@ -84,6 +91,11 @@ export const ActionPage = () => {
       
       if (searchQuery.trim()) {
         params.search = searchQuery.trim();
+      }
+      
+      // Admin can filter by creator
+      if (isAdmin && createdByFilter !== 'all') {
+        params.created_by = createdByFilter;
       }
       
       const response = await companyService.getCompanies(params);
@@ -132,10 +144,25 @@ export const ActionPage = () => {
     }
   };
 
+  // Fetch users for filter (admin only)
+  const fetchUsers = async () => {
+    if (!isAdmin) return;
+    
+    try {
+      const usersData = await userService.getUsers({ limit: 1000, is_active: true });
+      setUsers(usersData);
+    } catch (err: any) {
+      console.error('Failed to fetch users:', err);
+    }
+  };
+
   useEffect(() => {
     fetchCompanies();
     fetchTemplates();
     fetchFilters();
+    if (isAdmin) {
+      fetchUsers();
+    }
   }, []);
 
   // Debounced search
@@ -145,7 +172,7 @@ export const ActionPage = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, createdByFilter]);
 
   // Filter companies
   const filteredCompanies = useMemo(() => {
@@ -563,6 +590,32 @@ export const ActionPage = () => {
                 </option>
               ))}
             </select>
+
+            {/* Created By Filter (Admin only) */}
+            {isAdmin && (
+              <select
+                value={createdByFilter}
+                onChange={(e) => setCreatedByFilter(e.target.value)}
+                style={{
+                  padding: '0.625rem 1rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  backgroundColor: 'var(--card-bg)',
+                  color: 'var(--text-color)',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  minWidth: '150px',
+                }}
+              >
+                <option value="all">All Users</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.email}
+                  </option>
+                ))}
+              </select>
+            )}
 
             {/* Email Sent Filter */}
             <select

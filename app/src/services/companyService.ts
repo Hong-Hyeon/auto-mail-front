@@ -10,6 +10,7 @@ export interface CompanyListParams {
   limit?: number;
   is_active?: boolean;
   search?: string;
+  created_by?: string; // User ID (admin only)
 }
 
 export const companyService = {
